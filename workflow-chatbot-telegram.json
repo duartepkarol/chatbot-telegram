@@ -1,0 +1,205 @@
+{
+  "name": "workflow-chatbot-telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        80
+      ],
+      "id": "f4210ab1-dc68-41f8-9701-f4ba8fa864b6",
+      "name": "Telegram Trigger",
+      "webhookId": "50d09fa2-c1d7-40f6-9e75-9b4268ee7411",
+      "credentials": {
+        "telegramApi": {
+          "id": "hMk768hrwpJIHYa6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.queue }}"
+            },
+            {
+              "name": "appid",
+              "value": "={{ $env.OPENWEATHER_API_KEY }}"
+            },
+            {
+              "name": "units",
+              "value": "Metric"
+            },
+            {
+              "name": "lang",
+              "value": "pt_br"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -256,
+        80
+      ],
+      "id": "6c71cae3-2d7c-451e-baed-5c65c861ffee",
+      "name": "OpenWeather",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=🌤️ A temperatura em {{ $json.name }} é de {{ Math.round($json.main.temp) }}°C.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1e115dba-f67a-4026-80de-95067c9d3f50",
+      "name": "Temperatura",
+      "webhookId": "c05dde78-159f-46b3-973b-f676d607b5b6",
+      "credentials": {
+        "telegramApi": {
+          "id": "hMk768hrwpJIHYa6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=❌ Cidade não encontrada. Use o formato Cidade,UF (ex.: São Paulo,SP).",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        192
+      ],
+      "id": "a4e48b54-6265-451b-90b8-48901a141b23",
+      "name": "Erro",
+      "webhookId": "c05dde78-159f-46b3-973b-f676d607b5b6",
+      "credentials": {
+        "telegramApi": {
+          "id": "hMk768hrwpJIHYa6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "efceb00e-0dad-4c8c-a552-874e1a9ba72f",
+              "name": "=queue",
+              "value": "={{ $json.message?.text?.toLowerCase()?.replace(/\\s*,\\s/g, \",\")?.trim() }},br",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "ignoreConversionErrors": false,
+          "dotNotation": false
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -512,
+        80
+      ],
+      "id": "57d01693-d199-4033-bd04-d514241f4549",
+      "name": "Transforma cidade"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Transforma cidade",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenWeather": {
+      "main": [
+        [
+          {
+            "node": "Temperatura",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Temperatura": {
+      "main": [
+        []
+      ]
+    },
+    "Erro": {
+      "main": [
+        []
+      ]
+    },
+    "Transforma cidade": {
+      "main": [
+        [
+          {
+            "node": "OpenWeather",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "03b9d9e8-b0e0-42d1-a1f3-991e936cc1a9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "86c3de76b7686053c675e4f5dfef01b78a8e7a7a03ad5ab85757096c71d8f95d"
+  },
+  "id": "u6Iux7SH_JaHV9sftsdT3",
+  "tags": []
+}
